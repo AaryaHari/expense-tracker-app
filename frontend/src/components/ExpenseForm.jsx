@@ -5,13 +5,41 @@ const modes = ['Bank', 'Chase', 'Discover'];
 const transTypes = ['Credit', 'Debit'];
 
 export default function ExpenseForm() {
-  const [form, setForm] = useState({ item: '', amount: '', type: types[0], quantity: 1, mode: modes[0], date: '', transType: 'Debit' });
+  const [form, setForm] = useState({
+    item: '',
+    amount: '',
+    type: types[0],
+    quantity: 1,
+    mode: modes[0],
+    date: '',
+    transType: 'Debit',
+  });
   const [expenses, setExpenses] = useState([]);
+  const [balances, setBalances] = useState({ Bank: 0, Chase: 0, Discover: 0, total: 0 });
+
+  const computeBalances = (items) => {
+    let bank = 0,
+      chase = 0,
+      discover = 0,
+      total = 0;
+    items.forEach((e) => {
+      const sign = e.transType === 'Credit' ? 1 : -1;
+      const amt = parseFloat(e.amount || 0) * sign;
+      if (e.mode === 'Bank') bank += amt;
+      if (e.mode === 'Chase') chase += amt;
+      if (e.mode === 'Discover') discover += amt;
+      total += amt;
+    });
+    setBalances({ Bank: bank, Chase: chase, Discover: discover, total });
+  };
 
   useEffect(() => {
     fetch('http://localhost:3001/expenses')
-      .then(res => res.json())
-      .then(setExpenses);
+      .then((res) => res.json())
+      .then((data) => {
+        setExpenses(data);
+        computeBalances(data);
+      });
   }, []);
 
   const handleChange = (e) => {
@@ -26,18 +54,28 @@ export default function ExpenseForm() {
     });
     if (res.ok) {
       const { id } = await res.json();
-      setExpenses([...expenses, { ...form, id }]);
+      const updated = [...expenses, { ...form, id }];
+      setExpenses(updated);
+      computeBalances(updated);
     }
   };
 
   const deleteExpense = async (id) => {
     await fetch(`http://localhost:3001/expenses/${id}`, { method: 'DELETE' });
-    setExpenses(expenses.filter(e => e.id !== id));
+    const updated = expenses.filter((e) => e.id !== id);
+    setExpenses(updated);
+    computeBalances(updated);
   };
 
   return (
     <div>
       <h2>Add/Update Expense</h2>
+      <div>
+        <span>Bank Balance: {balances.Bank.toFixed(2)} </span>
+        <span>Chase: {balances.Chase.toFixed(2)} </span>
+        <span>Discover: {balances.Discover.toFixed(2)} </span>
+        <span>Total Expense: {balances.total.toFixed(2)}</span>
+      </div>
       <div>
         <input name="item" value={form.item} onChange={handleChange} placeholder="Item" />
         <input name="amount" type="number" step="0.01" value={form.amount} onChange={handleChange} placeholder="Amount" />
