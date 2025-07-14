@@ -12,7 +12,7 @@ desktop/   - Electron wrapper
 
 ## Usage
 
-Because the environment does not allow installing dependencies automatically, you must run `npm install` in each folder with internet access enabled. Then start the backend and frontend separately:
+Run `./setup.sh` with internet access to install dependencies for each folder. Then start the backend and frontend separately:
 
 ```
 cd backend && npm start
